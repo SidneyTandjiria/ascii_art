@@ -1,76 +1,51 @@
-# %%
 from PIL import Image
 import numpy as np
 
-# %%
-# image = Image.open("images/ascii-pineapple.jpg")
-# image = Image.open("images/sheep.png")
-# image = Image.open("images/hairycow.png")
-image = Image.open("Batman-Logo.png")
-print(f'Image loaded.\nImage size: {image.size}')
+class asciiArt:
 
-#%% resize image
+    def __init__(self, image_path):
+        self.image = Image.open(image_path)
 
-base_width = 225
+    def show(self):
+        self.image.show()
 
-wpercent = (base_width / float(image.size[0]))
-hsize = int((float(image.size[1]) * float(wpercent)))
-resized_image = image.resize((base_width, hsize), Image.Resampling.LANCZOS)
+    def resizeImage(self, baseWidth = 225):
+        wpercent = (baseWidth / float(self.image.size[0]))
+        hsize = int((float(self.image.size[1]) * float(wpercent)))
+        self.resizedImage = self.image.resize((baseWidth, hsize), Image.Resampling.LANCZOS)
 
-image_array = np.array(resized_image)
-print(f'Image resized: {resized_image.size}')
+    def convertToBrightness(self, method):
+        self.imageArray = np.array(self.resizedImage) # turn image into a numpy array
+        self.brightnessArray = np.zeros((self.imageArray.shape[0], self.imageArray.shape[1]))
+        # Convert RGB values to brightness values
+        for x in range(len(self.imageArray)):
+            for y in range(len(self.imageArray[x])):
+                pixel = self.imageArray[x][y]
+                # conversion depends on method
+                if method == "luminosity":
+                    self.brightnessArray[x][y] = 0.21 * pixel[0] + 0.72 * pixel[1] + 0.07 * pixel[2]
+                elif method == "lightness":
+                    self.brightnessArray[x][y] = (np.max(pixel) + np.min(pixel))/2
+                else: # default is average
+                    self.brightnessArray[x][y] = np.mean(pixel)
 
-image.show()
+    def convertToAscii(self, brightness, maxBrightness=255, asciiAlpha='`^\",:;Il!i~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$'):
+        asciiLen = len(asciiAlpha)-1
+        index = round((brightness / maxBrightness) * asciiLen)
+        return asciiAlpha[index]
 
-## Get image brightness
-# %%
-brightness_array = np.zeros((image_array.shape[0], image_array.shape[1]))
+    def asciify(self, baseWidth, method = "average"):
+        self.resizeImage(baseWidth) # resize image to the basewidth specified
+        self.convertToBrightness(method) # convert RGB array to a brightness array
+        # print the ascii art
+        for x in range(len(self.brightnessArray)):
+            print('\n', end = '')
+            for y in range(len(self.brightnessArray[x])):
+                ascii_char = self.convertToAscii(self.brightnessArray[x][y])
+                print(ascii_char*3, end='') # multiply by 3 otherwise the image is squished
 
-print('Converting RGB values into brightness numbers...')
-for x in range(len(image_array)):
-    for y in range(len(image_array[x])):
-        pixel = image_array[x][y]
-        brightness_array[x][y] = np.mean(pixel)
-        # brightness_array[x][y] = 0.21 * pixel[0] + 0.72 * pixel[1] + 0.07 * pixel[2]
-        # brightness_array[x][y] = (np.max(pixel) + np.min(pixel))/2
-
-print(f'Finished converting to brightness array: {brightness_array.shape}')
-
-
-# %%
-# Sense check brightness values
-print(f'Min brightness value: {round(np.min(brightness_array), 2)}')
-print(f'Max brightness value: {round(np.max(brightness_array), 2)}')
-
-# %%
-# The following is a list of ascii characters from lightest to darkest
-ascii_characters = "`^\",:;Il!i~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$"
-# print(len(ascii_characters))
-
-# %%
-# Come up with a way to map brightness to ascii characters
-# Brightness values range from 0 to 255
-# There are 65 ascii characters
-
-
-
-def map_to_ascii(brightness, maxBrightness=255, asciiAlpha='`^\",:;Il!i~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$'):
-    asciiLen = len(asciiAlpha)-1
-    index = round((brightness / maxBrightness) * asciiLen)
-    # print(index)
-    return asciiAlpha[index]
-
-
-# %%
-# ascii_array = np.empty((brightness_array.shape[0], brightness_array.shape[1]), dtype = 'S')
-
-print(f'Printing ascii art...\n')
-
-for x in range(len(brightness_array)):
-    print('\n', end = '')
-    for y in range(len(brightness_array[x])):
-        ascii_char = map_to_ascii(brightness_array[x][y])
-        print(ascii_char*3, end='')
-
-# print('\n')
-# %%
+if __name__ == "__main__":
+    image = "images/starwars.jpg"
+    artwork = asciiArt(image)
+    # artwork.show()
+    artwork.asciify(baseWidth = 130, method = "average")
